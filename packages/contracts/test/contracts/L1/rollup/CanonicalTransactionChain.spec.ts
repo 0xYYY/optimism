@@ -23,6 +23,7 @@ import {
   getEthTime,
   getNextBlockNumber,
 } from '../../../helpers'
+import { managedNames } from '../../../../src'
 
 const ELEMENT_TEST_SIZES = [1, 2, 4, 8, 16]
 const MAX_GAS_LIMIT = 8_000_000
@@ -120,7 +121,7 @@ describe('CanonicalTransactionChain', () => {
     )
 
     await AddressManager.setAddress(
-      addressNames.canonicalTransactionChain,
+      managedNames.deployedContracts.canonicalTransactionChain,
       CanonicalTransactionChain.address
     )
   })
