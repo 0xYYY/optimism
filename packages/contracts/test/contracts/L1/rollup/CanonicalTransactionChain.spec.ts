@@ -113,11 +113,6 @@ describe('CanonicalTransactionChain', () => {
       AddressManager.address,
       'CanonicalTransactionChain'
     )
-    await Factory__ChainStorageContainer.deploy(
-      AddressManager.address,
-      'CanonicalTransactionChain'
-      addressNames.canonicalTransactionChain
-    )
 
     await AddressManager.setAddress(
       'ChainStorageContainer-CTC-batches',
