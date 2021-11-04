@@ -318,6 +318,42 @@ func (s *SyncService) initializeLatestL1(ctcDeployHeight *big.Int) error {
 		}
 		// No error, the queue element was found
 		queueIndex = enqueue.GetMeta().QueueIndex
+	} else {
+		// The queue index is defined. Work backwards from the tip
+		// to make sure that the indexed queue index is the latest
+		// enqueued transaction
+		block := s.bc.CurrentBlock()
+		for {
+			// There are no blocks in the chain
+			if block == nil {
+				break
+			}
+			num := block.Number().Uint64()
+			// Handle the genesis block
+			if num == 0 {
+				break
+			}
+			txs := block.Transactions()
+			// This should never happen
+			if len(txs) != 1 {
+				log.Warn("Found block with unexpected number of txs", "count", len(txs), "height", num)
+				break
+			}
+			tx := txs[0]
+			qi := tx.GetMeta().QueueIndex
+			// When the queue index is set
+			if qi != nil {
+				if qi == queueIndex {
+					log.Info("Found correct staring queue index", "queue-index", qi)
+				} else {
+					log.Info("Found incorrect staring queue index, fixing", "old", queueIndex, "new", qi)
+					queueIndex = qi
+				}
+				break
+			}
+			block = s.bc.GetBlockByNumber(num - 1)
+		}
+
 	}
 	s.SetLatestEnqueueIndex(queueIndex)
 	return nil
@@ -793,10 +829,14 @@ func (s *SyncService) applyTransactionToTip(tx *types.Transaction) error {
 			tx.SetIndex(*index + 1)
 		}
 	}
+
+	// Set the latest index and queue index
+	// after the transaction is applied
 	s.SetLatestIndex(tx.GetMeta().Index)
 	if tx.GetMeta().QueueIndex != nil {
 		s.SetLatestEnqueueIndex(tx.GetMeta().QueueIndex)
 	}
+
 	// The index was set above so it is safe to dereference
 	log.Debug("Applying transaction to tip", "index", *tx.GetMeta().Index, "hash", tx.Hash().Hex(), "origin", tx.QueueOrigin().String())
 
